@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>일과 매니저</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⭐️</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ===================== HEADER (always visible on main views) ===================== -->
+  <header id="app-header" class="app-header">
+    <div class="header-top">
+      <h1 id="app-title" class="app-title">일과 매니저</h1>
+      <div class="date-nav">
+        <button id="date-prev" class="icon-btn" aria-label="이전 날">‹</button>
+        <button id="today-btn" class="date-pill">
+          <span id="date-display">6월 22일 (월)</span>
+        </button>
+        <button id="date-next" class="icon-btn" aria-label="다음 날">›</button>
+      </div>
+    </div>
+
+    <div class="children-row" id="children-row">
+      <!-- child tabs injected here -->
+    </div>
+
+    <nav class="main-nav" id="main-nav">
+      <button class="nav-btn active" data-view="routine">📋 일과</button>
+      <button class="nav-btn" data-view="stats">📊 통계</button>
+      <button class="nav-btn" data-view="admin-gate">⚙️ 설정</button>
+    </nav>
+  </header>
+
+  <main id="app-main">
+
+    <!-- ===================== VIEW 1+2: ROUTINE (메인화면) ===================== -->
+    <section id="view-routine" class="view active">
+
+      <div class="summary-row">
+        <div class="summary-card progress-card">
+          <div class="progress-ring-wrap">
+            <svg viewBox="0 0 120 120" class="progress-ring">
+              <circle cx="60" cy="60" r="52" class="ring-bg"/>
+              <circle cx="60" cy="60" r="52" class="ring-fg" id="ring-fg"/>
+            </svg>
+            <div class="progress-ring-label">
+              <span id="progress-pct">0%</span>
+              <small>오늘 달성</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="summary-card sticker-card" id="sticker-card-btn">
+          <div class="sticker-icon">⭐️</div>
+          <div class="sticker-count" id="sticker-count">0</div>
+          <div class="sticker-label">모은 스티커</div>
+        </div>
+
+        <button class="summary-card shop-card" id="shop-btn">
+          <div class="shop-icon">🎁</div>
+          <div class="shop-label">보상 교환소</div>
+        </button>
+      </div>
+
+      <div class="period-tabs" id="period-tabs">
+        <button class="period-tab active" data-period="morning">🌅 아침일과</button>
+        <button class="period-tab" data-period="afternoon">🎒 귀가일과</button>
+        <button class="period-tab" data-period="evening">🌙 저녁일과</button>
+      </div>
+
+      <ul class="checklist" id="checklist">
+        <!-- checklist items injected here -->
+      </ul>
+
+      <p class="empty-hint" id="routine-empty-hint" hidden>등록된 일과가 없어요. ⚙️ 설정에서 추가해 주세요.</p>
+
+    </section>
+
+    <!-- ===================== VIEW 3: 통계 ===================== -->
+    <section id="view-stats" class="view">
+      <h2 class="view-title">📊 <span id="stats-child-name">우리 아이</span>의 통계</h2>
+
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="stat-box-value" id="stat-week-avg">0%</div>
+          <div class="stat-box-label">이번 주 평균 달성률</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-value" id="stat-month-avg">0%</div>
+          <div class="stat-box-label">이번 달 평균 달성률</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-value" id="stat-total-stickers">0</div>
+          <div class="stat-box-label">누적 스티커</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-value" id="stat-max-streak">0일</div>
+          <div class="stat-box-label">최대 연속 100% 달성</div>
+        </div>
+      </div>
+
+      <div class="stat-panel">
+        <h3>이번 주 일별 달성률</h3>
+        <div class="bar-chart" id="weekly-bar-chart"></div>
+      </div>
+
+      <div class="stat-panel">
+        <h3>우리 가족 이번 주 비교</h3>
+        <div class="bar-chart compare-chart" id="family-compare-chart"></div>
+      </div>
+
+      <div class="stat-panel">
+        <h3>항목별 달성 현황 <small>(최근 30일)</small></h3>
+        <div id="item-stats-list" class="item-stats-list"></div>
+      </div>
+    </section>
+
+    <!-- ===================== ADMIN GATE (password) ===================== -->
+    <section id="view-admin-gate" class="view">
+      <div class="gate-box">
+        <div class="gate-icon">🔒</div>
+        <h2>관리자 모드</h2>
+        <p>부모님만 들어올 수 있어요. 비밀번호를 입력해 주세요.</p>
+        <input type="password" id="admin-pw-input" class="pw-input" inputmode="numeric" placeholder="비밀번호" autocomplete="off">
+        <p class="gate-error" id="gate-error" hidden>비밀번호가 틀렸어요. 다시 시도해 주세요.</p>
+        <div class="gate-actions">
+          <button class="btn btn-ghost" id="gate-cancel">취소</button>
+          <button class="btn btn-primary" id="gate-submit">입장하기</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== VIEW 4: 대시보드 (관리자모드) ===================== -->
+    <section id="view-admin" class="view">
+      <h2 class="view-title">⚙️ 관리자 대시보드</h2>
+
+      <div class="admin-block">
+        <h3>앱 제목</h3>
+        <div class="row-inline">
+          <input type="text" id="admin-app-title" class="text-input" placeholder="예: 우리집 일과 매니저">
+          <button class="btn btn-primary" id="admin-app-title-save">저장</button>
+        </div>
+      </div>
+
+      <div class="admin-block">
+        <h3>자녀 관리</h3>
+        <div id="admin-children-list" class="admin-children-list"></div>
+        <button class="btn btn-add" id="admin-add-child">+ 자녀 추가</button>
+      </div>
+
+      <div class="admin-block">
+        <h3>스티커 선물하기</h3>
+        <div class="row-inline">
+          <select id="sticker-gift-child" class="select-input"></select>
+          <span class="sticker-gift-balance" id="sticker-gift-balance">⭐️ 0개</span>
+        </div>
+        <div class="row-inline">
+          <button class="btn btn-round" id="sticker-minus">−1</button>
+          <input type="number" id="sticker-gift-amount" class="num-input" value="1" min="1">
+          <button class="btn btn-round" id="sticker-plus">+1</button>
+        </div>
+        <p class="hint-text">선택한 자녀의 스티커를 직접 더하거나 뺄 수 있어요.</p>
+      </div>
+
+      <div class="admin-block">
+        <h3>하루 일과 등록 · 수정</h3>
+        <div class="row-inline">
+          <label class="field-label">자녀</label>
+          <select id="routine-edit-child" class="select-input"></select>
+        </div>
+        <div class="routine-edit-tabs" id="routine-edit-tabs">
+          <button class="period-tab active" data-period="morning">🌅 아침일과</button>
+          <button class="period-tab" data-period="afternoon">🎒 귀가일과</button>
+          <button class="period-tab" data-period="evening">🌙 저녁일과</button>
+        </div>
+        <ul class="admin-routine-list" id="admin-routine-list"></ul>
+        <div class="row-inline">
+          <input type="text" id="new-routine-text" class="text-input" placeholder="새 일과 이름 (예: 양치하기)">
+          <button class="btn btn-add" id="add-routine-item">+ 추가</button>
+        </div>
+      </div>
+
+      <div class="admin-block">
+        <h3>보상 교환권 관리</h3>
+        <ul class="admin-reward-list" id="admin-reward-list"></ul>
+        <div class="row-inline">
+          <input type="text" id="new-reward-name" class="text-input" placeholder="보상 이름 (예: 아이스크림)">
+          <input type="number" id="new-reward-cost" class="num-input" placeholder="스티커" min="1" value="5">
+          <button class="btn btn-add" id="add-reward-item">+ 추가</button>
+        </div>
+      </div>
+
+      <!-- ===================== FOOTER ===================== -->
+      <footer class="admin-footer">
+        <button class="btn btn-ghost" id="export-data-btn">📤 내보내기</button>
+        <button class="btn btn-ghost" id="import-data-btn">📥 불러오기</button>
+        <input type="file" id="import-file-input" accept="application/json" hidden>
+        <button class="btn btn-ghost" id="change-pw-btn">🔑 비밀번호</button>
+        <button class="btn btn-danger" id="reset-all-btn">🗑️ 전체 초기화</button>
+        <button class="btn btn-primary" id="admin-done-btn">✅ 완료</button>
+      </footer>
+    </section>
+
+  </main>
+</div>
+
+<!-- ===================== MODALS ===================== -->
+
+<div class="modal-overlay" id="shop-modal-overlay" hidden>
+  <div class="modal shop-modal">
+    <button class="modal-close" data-close="shop-modal-overlay">✕</button>
+    <h2>🎁 보상 교환소</h2>
+    <p class="modal-sub"><span id="shop-child-name">아이</span>의 스티커: <strong id="shop-child-stickers">0</strong>개</p>
+    <ul class="shop-list" id="shop-list"></ul>
+    <p class="empty-hint" id="shop-empty-hint" hidden>등록된 보상이 없어요. ⚙️ 설정에서 추가해 주세요.</p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirm-modal-overlay" hidden>
+  <div class="modal confirm-modal">
+    <p id="confirm-modal-text">정말 진행할까요?</p>
+    <div class="gate-actions">
+      <button class="btn btn-ghost" id="confirm-modal-cancel">취소</button>
+      <button class="btn btn-danger" id="confirm-modal-ok">확인</button>
+    </div>
+  </div>
+</div>
+
+<div class="celebrate-overlay" id="celebrate-overlay" hidden>
+  <div class="confetti-field" id="confetti-field"></div>
+  <div class="celebrate-card">
+    <div class="celebrate-emoji">🎉</div>
+    <div class="celebrate-text">오늘 일과 완성!</div>
+    <div class="celebrate-sub">⭐️ 스티커 1개를 받았어요!</div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
