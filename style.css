@@ -388,9 +388,9 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; font-weight: 400; }
   box-shadow: var(--shadow-md);
   padding: 10px;
   display: grid;
-  grid-template-columns: repeat(10, 1fr);
+  grid-template-columns: repeat(6, 40px);
   gap: 4px;
-  max-width: 280px;
+  width: 268px;
   animation: emoji-pop .15s ease;
 }
 @keyframes emoji-pop {
@@ -401,9 +401,9 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; font-weight: 400; }
   border: none;
   background: transparent;
   border-radius: 8px;
-  font-size: 1.25rem;
-  width: 26px;
-  height: 26px;
+  font-size: 1.45rem;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -490,4 +490,3 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
-
