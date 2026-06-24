@@ -18,6 +18,7 @@
   <header id="app-header" class="app-header">
     <div class="header-top">
       <h1 id="app-title" class="app-title">일과 매니저</h1>
+
       <div class="date-nav">
         <button id="date-prev" class="icon-btn" aria-label="이전 날">‹</button>
         <button id="today-btn" class="date-pill">
@@ -25,17 +26,17 @@
         </button>
         <button id="date-next" class="icon-btn" aria-label="다음 날">›</button>
       </div>
+
+      <div class="header-actions">
+        <button class="header-icon-btn header-icon-stats" data-view="stats" aria-label="통계" title="통계">📊</button>
+        <button class="header-icon-btn header-icon-shop" id="shop-btn" aria-label="상점" title="상점">🎁</button>
+        <button class="header-icon-btn header-icon-settings" data-view="admin-gate" aria-label="설정" title="설정">⚙️</button>
+      </div>
     </div>
 
     <div class="children-row" id="children-row">
-      <!-- child tabs injected here -->
+      <!-- child filter tabs injected here -->
     </div>
-
-    <nav class="main-nav" id="main-nav">
-      <button class="nav-btn active" data-view="routine">📋 일과</button>
-      <button class="nav-btn" data-view="stats">📊 통계</button>
-      <button class="nav-btn" data-view="admin-gate">⚙️ 설정</button>
-    </nav>
   </header>
 
   <main id="app-main">
@@ -43,49 +44,20 @@
     <!-- ===================== VIEW 1+2: ROUTINE (메인화면) ===================== -->
     <section id="view-routine" class="view active">
 
-      <div class="summary-row">
-        <div class="summary-card progress-card">
-          <div class="progress-ring-wrap">
-            <svg viewBox="0 0 120 120" class="progress-ring">
-              <circle cx="60" cy="60" r="52" class="ring-bg"/>
-              <circle cx="60" cy="60" r="52" class="ring-fg" id="ring-fg"/>
-            </svg>
-            <div class="progress-ring-label">
-              <span id="progress-pct">0%</span>
-              <small>오늘 달성</small>
-            </div>
-          </div>
-        </div>
-
-        <div class="summary-card sticker-card" id="sticker-card-btn">
-          <div class="sticker-icon">⭐️</div>
-          <div class="sticker-count" id="sticker-count">0</div>
-          <div class="sticker-label">모은 스티커</div>
-        </div>
-
-        <button class="summary-card shop-card" id="shop-btn">
-          <div class="shop-icon">🎁</div>
-          <div class="shop-label">보상 교환소</div>
-        </button>
+      <div id="family-card-list" class="family-card-list">
+        <!-- one card per child injected here -->
       </div>
 
-      <div class="period-tabs" id="period-tabs">
-        <button class="period-tab active" data-period="morning">🌅 아침일과</button>
-        <button class="period-tab" data-period="afternoon">🎒 귀가일과</button>
-        <button class="period-tab" data-period="evening">🌙 저녁일과</button>
-      </div>
-
-      <ul class="checklist" id="checklist">
-        <!-- checklist items injected here -->
-      </ul>
-
-      <p class="empty-hint" id="routine-empty-hint" hidden>등록된 일과가 없어요. ⚙️ 설정에서 추가해 주세요.</p>
+      <p class="empty-hint" id="routine-empty-hint" hidden>등록된 자녀가 없어요. ⚙️ 설정에서 추가해 주세요.</p>
 
     </section>
 
     <!-- ===================== VIEW 3: 통계 ===================== -->
     <section id="view-stats" class="view">
-      <h2 class="view-title">📊 <span id="stats-child-name">우리 아이</span>의 통계</h2>
+      <div class="view-title-row">
+        <button class="icon-btn back-btn" id="stats-back-btn" aria-label="일과로 돌아가기">←</button>
+        <h2 class="view-title">📊 <span id="stats-child-name">우리 아이</span>의 통계</h2>
+      </div>
 
       <div class="stat-grid">
         <div class="stat-box">
@@ -249,4 +221,3 @@
 <script src="app.js"></script>
 </body>
 </html>
-
