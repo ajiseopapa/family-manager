@@ -492,8 +492,8 @@ function openEmojiPicker(anchorEl, emojiSet, currentEmoji, onSelect) {
 
   // Position near anchor (fixed positioning — scroll offset 불필요)
   const rect = anchorEl.getBoundingClientRect();
-  const pickerW = 280;
-  const pickerH = 160;
+  const pickerW = 268;
+  const pickerH = 220;
   let left = rect.left;
   let top = rect.bottom + 6;
   if (left + pickerW > window.innerWidth - 10) left = window.innerWidth - pickerW - 10;
