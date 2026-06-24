@@ -487,7 +487,7 @@ function openEmojiPicker(anchorEl, emojiSet, currentEmoji, onSelect) {
   const COLS = 6;
   const CELL = 42;
   const PAD = 8;
-  const pickerW = COLS * CELL + PAD * 2; // 260px
+  const pickerW = 300;
 
   const wrapper = document.createElement('div');
   wrapper.id = 'emoji-picker-wrapper';
