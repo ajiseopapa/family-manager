@@ -39,9 +39,22 @@ function todayMidnight() { const t = new Date(); t.setHours(0, 0, 0, 0); return 
 /* ---------------- default data ---------------- */
 function defaultRoutineSet() {
   return {
-    morning: ['일어나기', '이불 정리하기', '세수하고 양치하기', '옷 갈아입기'].map((t) => ({ id: uid(), text: t })),
-    afternoon: ['손 씻기', '숙제하기', '가방 정리하기'].map((t) => ({ id: uid(), text: t })),
-    evening: ['책 읽기', '샤워하기', '장난감 정리하기'].map((t) => ({ id: uid(), text: t })),
+    morning: [
+      { id: uid(), text: '일어나기', emoji: '🌅' },
+      { id: uid(), text: '이불 정리하기', emoji: '🛏️' },
+      { id: uid(), text: '세수하고 양치하기', emoji: '🦷' },
+      { id: uid(), text: '옷 갈아입기', emoji: '👕' },
+    ],
+    afternoon: [
+      { id: uid(), text: '손 씻기', emoji: '🧴' },
+      { id: uid(), text: '숙제하기', emoji: '✏️' },
+      { id: uid(), text: '가방 정리하기', emoji: '🎒' },
+    ],
+    evening: [
+      { id: uid(), text: '책 읽기', emoji: '📖' },
+      { id: uid(), text: '샤워하기', emoji: '🚿' },
+      { id: uid(), text: '장난감 정리하기', emoji: '🧸' },
+    ],
   };
 }
 function defaultState() {
@@ -60,9 +73,9 @@ function defaultState() {
     routines,
     logs: {},
     rewards: [
-      { id: uid(), name: '아이스크림', cost: 5 },
-      { id: uid(), name: '장난감 뽑기', cost: 10 },
-      { id: uid(), name: '주말 외식 메뉴 선택권', cost: 20 },
+      { id: uid(), name: '아이스크림', cost: 5, emoji: '🍦' },
+      { id: uid(), name: '장난감 뽑기', cost: 10, emoji: '🎮' },
+      { id: uid(), name: '주말 외식 메뉴 선택권', cost: 20, emoji: '🍕' },
     ],
   };
 }
@@ -78,6 +91,18 @@ function normalizeState(s) {
   if (!s.routines) s.routines = {};
   if (!s.logs) s.logs = {};
   if (!Array.isArray(s.rewards)) s.rewards = [];
+  s.rewards.forEach((r) => { if (!r.emoji) r.emoji = '🎁'; });
+  // 일과 항목에도 emoji 필드 보정
+  if (s.routines) {
+    Object.values(s.routines).forEach((childRoutines) => {
+      if (!childRoutines) return;
+      ['morning', 'afternoon', 'evening'].forEach((p) => {
+        if (Array.isArray(childRoutines[p])) {
+          childRoutines[p].forEach((item) => { if (!item.emoji) item.emoji = '📌'; });
+        }
+      });
+    });
+  }
   if (!s.appTitle) s.appTitle = '일과 매니저';
   if (!s.password) s.password = '0000';
   if (!s.selectedChildId || !s.children.find((c) => c.id === s.selectedChildId)) {
@@ -465,12 +490,15 @@ function openEmojiPicker(anchorEl, emojiSet, currentEmoji, onSelect) {
   ).join('');
   document.body.appendChild(picker);
 
-  // Position near anchor
+  // Position near anchor (fixed positioning — scroll offset 불필요)
   const rect = anchorEl.getBoundingClientRect();
-  const pickerW = 260;
-  let left = rect.left + window.scrollX;
-  let top = rect.bottom + window.scrollY + 6;
+  const pickerW = 280;
+  const pickerH = 160;
+  let left = rect.left;
+  let top = rect.bottom + 6;
   if (left + pickerW > window.innerWidth - 10) left = window.innerWidth - pickerW - 10;
+  if (left < 6) left = 6;
+  if (top + pickerH > window.innerHeight - 10) top = rect.top - pickerH - 6;
   picker.style.left = left + 'px';
   picker.style.top = top + 'px';
 
@@ -973,4 +1001,3 @@ function init() {
 }
 
 init();
-
