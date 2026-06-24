@@ -41,27 +41,32 @@ function defaultRoutineSet() {
   return {
     morning: [
       { id: uid(), text: '일어나기', emoji: '🌅' },
+      { id: uid(), text: '세수·양치', emoji: '🦷' },
+      { id: uid(), text: '밥 먹기', emoji: '🍚' },
       { id: uid(), text: '이불 정리하기', emoji: '🛏️' },
-      { id: uid(), text: '세수하고 양치하기', emoji: '🦷' },
       { id: uid(), text: '옷 갈아입기', emoji: '👕' },
     ],
     afternoon: [
       { id: uid(), text: '손 씻기', emoji: '🧴' },
       { id: uid(), text: '숙제하기', emoji: '✏️' },
+      { id: uid(), text: '방 정리', emoji: '🧹' },
       { id: uid(), text: '가방 정리하기', emoji: '🎒' },
+      { id: uid(), text: '간식 먹기', emoji: '🍎' },
     ],
     evening: [
+      { id: uid(), text: '저녁 목욕', emoji: '🛁' },
       { id: uid(), text: '책 읽기', emoji: '📖' },
-      { id: uid(), text: '샤워하기', emoji: '🚿' },
       { id: uid(), text: '장난감 정리하기', emoji: '🧸' },
+      { id: uid(), text: '잠자리 준비', emoji: '😴' },
+      { id: uid(), text: '내일 가방 챙기기', emoji: '🎒' },
     ],
   };
 }
 function defaultState() {
   const children = [
-    { id: uid(), name: '토끼', emoji: '🐰', stickers: 0, bonusEarned: 0 },
-    { id: uid(), name: '곰돌이', emoji: '🐻', stickers: 0, bonusEarned: 0 },
-    { id: uid(), name: '병아리', emoji: '🐥', stickers: 0, bonusEarned: 0 },
+    { id: uid(), name: '첫째', emoji: '🐻', stickers: 0, bonusEarned: 0 },
+    { id: uid(), name: '둘째', emoji: '🐱', stickers: 0, bonusEarned: 0 },
+    { id: uid(), name: '셋째', emoji: '🐰', stickers: 0, bonusEarned: 0 },
   ];
   const routines = {};
   children.forEach((c) => { routines[c.id] = defaultRoutineSet(); });
@@ -127,7 +132,6 @@ function saveState() {
 let state = loadState();
 let uiDate = todayMidnight();
 let currentView = 'routine';
-let currentPeriod = 'morning';
 let currentAdminPeriod = 'morning';
 let pendingConfirmAction = null;
 
@@ -236,17 +240,12 @@ function showConfirm(text, action) {
 /* ---------------- header / nav ---------------- */
 function renderDateDisplay() { $('#date-display').textContent = formatDateDisplay(uiDate); }
 
-function setActiveNav(viewKey) {
-  $$('.nav-btn').forEach((b) => {
-    const isSettings = viewKey === 'admin' || viewKey === 'admin-gate';
-    b.classList.toggle('active', b.dataset.view === viewKey || (isSettings && b.dataset.view === 'admin-gate'));
-  });
-}
 function showView(viewKey) {
   $$('.view').forEach((v) => v.classList.remove('active'));
   $('#view-' + viewKey).classList.add('active');
-  setActiveNav(viewKey);
   currentView = viewKey;
+  $('#children-row').hidden = (viewKey === 'admin' || viewKey === 'admin-gate');
+  renderChildrenRow();
   if (viewKey === 'routine') renderRoutineView();
   if (viewKey === 'stats') renderStatsView();
   if (viewKey === 'admin') renderAdminView();
@@ -258,68 +257,125 @@ function refreshCurrentView() {
   else if (currentView === 'admin') renderAdminView();
 }
 
+let routineFilterChildId = null; // 메인화면에서 특정 자녀만 보기 필터 (null = 전체 보기)
+
 function renderChildrenRow() {
   const row = $('#children-row');
-  row.innerHTML = state.children.map((c) => `
-    <button class="child-tab ${c.id === state.selectedChildId ? 'active' : ''}" data-id="${c.id}">
+  const isRoutine = currentView === 'routine';
+  row.innerHTML = state.children.map((c) => {
+    const active = isRoutine ? (c.id === routineFilterChildId) : (c.id === state.selectedChildId);
+    return `
+    <button class="child-tab ${active ? 'active' : ''}" data-id="${c.id}">
       <span class="child-avatar">${c.emoji}</span>
       <span class="child-name">${escapeHtml(c.name)}</span>
-    </button>`).join('');
+    </button>`;
+  }).join('');
   row.querySelectorAll('.child-tab').forEach((btn) => {
     btn.addEventListener('click', () => {
-      state.selectedChildId = btn.dataset.id;
-      saveState();
-      renderChildrenRow();
-      refreshCurrentView();
+      if (isRoutine) {
+        routineFilterChildId = (routineFilterChildId === btn.dataset.id) ? null : btn.dataset.id;
+        renderChildrenRow();
+        renderRoutineView();
+      } else {
+        state.selectedChildId = btn.dataset.id;
+        saveState();
+        renderChildrenRow();
+        refreshCurrentView();
+      }
     });
   });
 }
 
-/* ---------------- VIEW: routine (메인화면) ---------------- */
+/* ---------------- VIEW: routine (메인화면 — 전체 자녀 카드) ---------------- */
+const PERIOD_LABEL = { morning: '아침 일과', afternoon: '귀가 일과', evening: '저녁 일과' };
+
 function renderRoutineView() {
   renderDateDisplay();
-  const child = getSelectedChild();
-  if (!child) return;
   const ds = toDateStr(uiDate);
-  const stats = computeDayStats(child.id, ds);
-  const circumference = 326.7;
-  const offset = circumference - (stats.pct / 100) * circumference;
-  $('#ring-fg').style.strokeDashoffset = offset;
-  $('#progress-pct').textContent = stats.pct + '%';
-  $('#sticker-count').textContent = child.stickers;
-  renderChecklist(child.id, ds);
-}
-function renderChecklist(childId, dateStr) {
-  const items = getRoutineItems(childId, currentPeriod);
-  const ul = $('#checklist');
-  if (items.length === 0) {
-    ul.innerHTML = '';
+  const list = $('#family-card-list');
+
+  if (state.children.length === 0) {
+    list.innerHTML = '';
     $('#routine-empty-hint').hidden = false;
     return;
   }
   $('#routine-empty-hint').hidden = true;
-  const dayLog = (state.logs[childId] && state.logs[childId][dateStr] && state.logs[childId][dateStr][currentPeriod]) || {};
-  ul.innerHTML = items.map((item) => {
-    const done = !!dayLog[item.id];
-    const emoji = item.emoji || '';
-    return `<li class="checklist-item ${done ? 'done' : ''}" data-id="${item.id}">
-      <span class="check-circle">${done ? '✓' : ''}</span>
-      ${emoji ? `<span class="checklist-item-emoji">${emoji}</span>` : ''}
-      <span class="checklist-item-text">${escapeHtml(item.text)}</span>
-    </li>`;
+
+  const visibleChildren = routineFilterChildId
+    ? state.children.filter((c) => c.id === routineFilterChildId)
+    : state.children;
+
+  list.innerHTML = visibleChildren.map((child) => {
+    const colorIdx = state.children.findIndex((c) => c.id === child.id);
+    return renderFamilyCard(child, ds, colorIdx);
   }).join('');
-  ul.querySelectorAll('.checklist-item').forEach((li) => {
-    li.addEventListener('click', () => {
-      const result = toggleRoutineItem(childId, dateStr, currentPeriod, li.dataset.id);
+
+  // wire chip clicks
+  list.querySelectorAll('.routine-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const { childId, period, itemId } = chip.dataset;
+      const result = toggleRoutineItem(childId, ds, period, itemId);
       renderRoutineView();
       if (result.justCompleted) celebrate();
     });
   });
+
+  // wire per-card shop button
+  list.querySelectorAll('.card-shop-btn').forEach((btn) => {
+    btn.addEventListener('click', () => openShopModal(btn.dataset.childId));
+  });
+}
+
+function renderFamilyCard(child, dateStr, colorIdx) {
+  const stats = computeDayStats(child.id, dateStr);
+  const done100 = stats.total > 0 && stats.pct === 100;
+  const periodsHtml = PERIODS.map((p) => renderPeriodRow(child.id, p, dateStr)).join('');
+  const colorN = (colorIdx % 4) + 1;
+
+  return `
+    <div class="family-card ${done100 ? 'card-complete' : ''}" data-child-id="${child.id}" data-color="${colorN}">
+      <div class="family-card-head">
+        <span class="family-card-avatar">${child.emoji}</span>
+        <div class="family-card-id">
+          <span class="family-card-name">${escapeHtml(child.name)}</span>
+          <span class="family-card-progress">${stats.checked}/${stats.total} 완료</span>
+        </div>
+        <button class="card-shop-btn" data-child-id="${child.id}" title="보상 교환소">
+          <span class="card-shop-emoji">⭐️</span><span>${child.stickers}</span>
+        </button>
+      </div>
+      <div class="family-card-bar-track">
+        <div class="family-card-bar-fill" style="width:${stats.pct}%"></div>
+      </div>
+      <div class="family-card-periods">
+        ${periodsHtml}
+      </div>
+    </div>`;
+}
+
+function renderPeriodRow(childId, period, dateStr) {
+  const items = getRoutineItems(childId, period);
+  const dayLog = (state.logs[childId] && state.logs[childId][dateStr] && state.logs[childId][dateStr][period]) || {};
+  if (items.length === 0) return '';
+  const chips = items.map((item) => {
+    const done = !!dayLog[item.id];
+    const emoji = item.emoji || '';
+    return `<button class="routine-chip ${done ? 'done' : ''}" data-child-id="${childId}" data-period="${period}" data-item-id="${item.id}">
+      ${emoji ? `<span class="routine-chip-emoji">${emoji}</span>` : ''}
+      <span class="routine-chip-text">${escapeHtml(item.text)}</span>
+      ${done ? '<span class="routine-chip-check">✓</span>' : ''}
+    </button>`;
+  }).join('');
+  return `
+    <div class="period-row">
+      <span class="period-row-label period-${period}">${PERIOD_LABEL[period]}</span>
+      <div class="period-row-chips">${chips}</div>
+    </div>`;
 }
 
 /* ---------------- shop modal ---------------- */
-function openShopModal() {
-  const child = getSelectedChild();
+function openShopModal(childId) {
+  const child = childId ? getChild(childId) : getSelectedChild();
   if (!child) return;
   $('#shop-child-name').textContent = child.name;
   $('#shop-child-stickers').textContent = child.stickers;
@@ -344,7 +400,7 @@ function openShopModal() {
         child.stickers -= reward.cost;
         saveState();
         showToast(`🎉 "${reward.name}" 교환 완료!`);
-        openShopModal();
+        openShopModal(child.id);
         renderRoutineView();
       });
     });
@@ -583,6 +639,7 @@ function renderAdminChildrenList() {
         delete state.routines[id];
         delete state.logs[id];
         if (state.selectedChildId === id) state.selectedChildId = state.children[0].id;
+        if (routineFilterChildId === id) routineFilterChildId = null;
         saveState();
         renderChildrenRow();
         renderAdminChildrenList();
@@ -784,8 +841,8 @@ function wireEvents() {
   $('#date-next').addEventListener('click', () => { uiDate = addDays(uiDate, 1); renderRoutineView(); });
   $('#today-btn').addEventListener('click', () => { uiDate = todayMidnight(); renderRoutineView(); });
 
-  // main nav
-  $$('.nav-btn').forEach((btn) => {
+  // header icon nav (통계 / 설정)
+  $$('.header-icon-btn[data-view]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const v = btn.dataset.view;
       if (v === 'admin-gate') {
@@ -799,13 +856,15 @@ function wireEvents() {
     });
   });
 
-  // period tabs (routine view)
-  $$('#period-tabs .period-tab').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      currentPeriod = btn.dataset.period;
-      $$('#period-tabs .period-tab').forEach((b) => b.classList.toggle('active', b === btn));
-      renderRoutineView();
-    });
+  // stats view: back to routine
+  $('#stats-back-btn').addEventListener('click', () => showView('routine'));
+
+  // header icon: shop (자녀가 1명이면 바로 열고, 여러 명이면 필터된 자녀 또는 안내)
+  $('#shop-btn').addEventListener('click', () => {
+    if (state.children.length === 0) return;
+    if (routineFilterChildId) { openShopModal(routineFilterChildId); return; }
+    if (state.children.length === 1) { openShopModal(state.children[0].id); return; }
+    showToast('위에서 아이를 먼저 선택해 주세요 🙂');
   });
 
   // period tabs (admin routine editor)
@@ -817,9 +876,6 @@ function wireEvents() {
     });
   });
   $('#routine-edit-child').addEventListener('change', renderAdminRoutineList);
-
-  // shop
-  $('#shop-btn').addEventListener('click', openShopModal);
 
   // generic modal close
   $$('.modal-close').forEach((btn) => btn.addEventListener('click', () => closeModal(btn.dataset.close)));
@@ -968,6 +1024,7 @@ function importData(e) {
       const parsed = JSON.parse(reader.result);
       if (!parsed || !Array.isArray(parsed.children)) throw new Error('invalid backup file');
       state = normalizeState(parsed);
+      routineFilterChildId = null;
       saveState();
       $('#app-title').textContent = state.appTitle;
       renderChildrenRow();
@@ -997,9 +1054,8 @@ function resetAll() {
   state = defaultState();
   saveState();
   uiDate = todayMidnight();
-  currentPeriod = 'morning';
   currentAdminPeriod = 'morning';
-  $$('#period-tabs .period-tab').forEach((b) => b.classList.toggle('active', b.dataset.period === 'morning'));
+  routineFilterChildId = null;
   $$('#routine-edit-tabs .period-tab').forEach((b) => b.classList.toggle('active', b.dataset.period === 'morning'));
   $('#app-title').textContent = state.appTitle;
   renderChildrenRow();
@@ -1010,7 +1066,6 @@ function resetAll() {
 /* ---------------- init ---------------- */
 function init() {
   $('#app-title').textContent = state.appTitle;
-  renderChildrenRow();
   wireEvents();
   showView('routine');
 }
