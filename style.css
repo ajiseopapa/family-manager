@@ -378,10 +378,116 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; font-weight: 400; }
 .celebrate-text { font-family: var(--font-display); font-size: 1.3rem; color: var(--coral-dark); margin-top: 8px; }
 .celebrate-sub { font-size: .9rem; color: var(--ink-soft); margin-top: 4px; }
 
-/* ---------------- ACCESSIBILITY ---------------- */
+/* ---------------- EMOJI PICKER ---------------- */
+.emoji-picker {
+  position: fixed;
+  z-index: 500;
+  background: var(--paper-2);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 10px;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 4px;
+  max-width: 280px;
+  animation: emoji-pop .15s ease;
+}
+@keyframes emoji-pop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.emoji-option {
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 1.25rem;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+.emoji-option:hover { background: var(--morning-soft); }
+.emoji-option.selected { background: var(--afternoon-soft); outline: 2px solid var(--afternoon); }
+
+.emoji-pick-btn {
+  border: 2px solid var(--line);
+  background: var(--paper);
+  border-radius: 10px;
+  font-size: 1.1rem;
+  padding: 5px 7px;
+  flex-shrink: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  line-height: 1;
+  transition: border-color .15s;
+}
+.emoji-pick-btn:hover { border-color: var(--coral); }
+.emoji-pick-hint { font-size: .6rem; color: var(--ink-soft); }
+
+.new-emoji-btn {
+  font-size: 1.2rem;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+.routine-emoji-btn {
+  font-size: 1.2rem;
+  width: 42px;
+  height: 36px;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+.reward-emoji-btn {
+  font-size: 1.2rem;
+  width: 42px;
+  height: 36px;
+  flex-shrink: 0;
+  justify-content: center;
+}
+
+/* ---------------- DRAG HANDLE ---------------- */
+.drag-handle {
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+  cursor: grab;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  user-select: none;
+  letter-spacing: -1px;
+}
+.drag-handle:active { cursor: grabbing; }
+.dragging { opacity: 0.5; }
+.drag-over {
+  outline: 2px dashed var(--coral);
+  outline-offset: -2px;
+  background: var(--morning-soft) !important;
+}
+
+/* ---------------- CHECKLIST ITEM EMOJI ---------------- */
+.checklist-item-emoji {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+/* ---------------- SHOP ITEM EMOJI ---------------- */
+.shop-item-emoji {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+
 button:focus-visible, input:focus-visible, select:focus-visible {
   outline: 3px solid var(--evening); outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
