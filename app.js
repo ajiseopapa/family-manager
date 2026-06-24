@@ -482,25 +482,37 @@ let emojiPickerTarget = null; // { type: 'child'|'routine'|'reward', id, callbac
 
 function openEmojiPicker(anchorEl, emojiSet, currentEmoji, onSelect) {
   closeEmojiPicker();
+
+  // 버튼 부모에 relative wrapper 삽입 → 스크롤에 독립적으로 따라다님
+  const COLS = 6;
+  const CELL = 42;
+  const PAD = 8;
+  const pickerW = COLS * CELL + PAD * 2; // 260px
+
+  const wrapper = document.createElement('div');
+  wrapper.id = 'emoji-picker-wrapper';
+  wrapper.style.cssText = 'position:relative;display:inline-block;width:0;height:0;';
+
   const picker = document.createElement('div');
   picker.id = 'emoji-picker';
   picker.className = 'emoji-picker';
+  picker.style.width = pickerW + 'px';
   picker.innerHTML = emojiSet.map((e) =>
     `<button class="emoji-option${e === currentEmoji ? ' selected' : ''}" data-emoji="${e}">${e}</button>`
   ).join('');
-  document.body.appendChild(picker);
 
-  // Position near anchor (fixed positioning — scroll offset 불필요)
-  const rect = anchorEl.getBoundingClientRect();
-  const pickerW = 268;
-  const pickerH = 220;
-  let left = rect.left;
-  let top = rect.bottom + 6;
-  if (left + pickerW > window.innerWidth - 10) left = window.innerWidth - pickerW - 10;
-  if (left < 6) left = 6;
-  if (top + pickerH > window.innerHeight - 10) top = rect.top - pickerH - 6;
-  picker.style.left = left + 'px';
-  picker.style.top = top + 'px';
+  wrapper.appendChild(picker);
+  anchorEl.parentNode.insertBefore(wrapper, anchorEl.nextSibling);
+
+  // 화면 오른쪽 벗어나면 오른쪽 정렬
+  const anchorRect = anchorEl.getBoundingClientRect();
+  if (anchorRect.left + pickerW > window.innerWidth - 10) {
+    picker.style.right = '0';
+    picker.style.left = 'auto';
+  } else {
+    picker.style.left = '0';
+    picker.style.right = 'auto';
+  }
 
   picker.querySelectorAll('.emoji-option').forEach((btn) => {
     btn.addEventListener('click', (e) => {
@@ -516,15 +528,18 @@ function openEmojiPicker(anchorEl, emojiSet, currentEmoji, onSelect) {
 }
 
 function onOutsideClick(e) {
+  const wrapper = document.getElementById('emoji-picker-wrapper');
   const picker = document.getElementById('emoji-picker');
-  if (picker && !picker.contains(e.target)) {
+  if (picker && !picker.contains(e.target) && (!wrapper || !wrapper.contains(e.target))) {
     closeEmojiPicker();
   }
 }
 
 function closeEmojiPicker() {
-  const existing = document.getElementById('emoji-picker');
+  const existing = document.getElementById('emoji-picker-wrapper');
   if (existing) existing.remove();
+  const picker = document.getElementById('emoji-picker');
+  if (picker) picker.remove();
   document.removeEventListener('click', onOutsideClick);
 }
 
