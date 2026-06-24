@@ -390,9 +390,9 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; font-weight: 400; }
   box-shadow: var(--shadow-md);
   padding: 8px;
   display: grid;
-  grid-template-columns: repeat(6, 42px);
+  grid-template-columns: repeat(6, 1fr);
   gap: 2px;
-  width: 260px; /* 6 × 42px + 2×8px padding = 268 → 260 안전값 */
+  width: 300px;
   animation: emoji-pop .15s ease;
 }
 @keyframes emoji-pop {
@@ -403,14 +403,14 @@ h1, h2, h3 { font-family: var(--font-display); margin: 0; font-weight: 400; }
   border: none;
   background: transparent;
   border-radius: 8px;
-  font-size: 1.4rem;
-  width: 42px;
-  height: 42px;
+  font-size: 1.5rem;
+  aspect-ratio: 1;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 0;
+  padding: 4px 0;
   line-height: 1;
 }
 .emoji-option:hover { background: var(--morning-soft); }
