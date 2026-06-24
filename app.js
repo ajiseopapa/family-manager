@@ -46,9 +46,9 @@ function defaultRoutineSet() {
 }
 function defaultState() {
   const children = [
-    { id: uid(), name: '첫째', emoji: '👦', stickers: 0, bonusEarned: 0 },
-    { id: uid(), name: '둘째', emoji: '👧', stickers: 0, bonusEarned: 0 },
-    { id: uid(), name: '셋째', emoji: '🧒', stickers: 0, bonusEarned: 0 },
+    { id: uid(), name: '토끼', emoji: '🐰', stickers: 0, bonusEarned: 0 },
+    { id: uid(), name: '곰돌이', emoji: '🐻', stickers: 0, bonusEarned: 0 },
+    { id: uid(), name: '병아리', emoji: '🐥', stickers: 0, bonusEarned: 0 },
   ];
   const routines = {};
   children.forEach((c) => { routines[c.id] = defaultRoutineSet(); });
@@ -276,8 +276,10 @@ function renderChecklist(childId, dateStr) {
   const dayLog = (state.logs[childId] && state.logs[childId][dateStr] && state.logs[childId][dateStr][currentPeriod]) || {};
   ul.innerHTML = items.map((item) => {
     const done = !!dayLog[item.id];
+    const emoji = item.emoji || '';
     return `<li class="checklist-item ${done ? 'done' : ''}" data-id="${item.id}">
       <span class="check-circle">${done ? '✓' : ''}</span>
+      ${emoji ? `<span class="checklist-item-emoji">${emoji}</span>` : ''}
       <span class="checklist-item-text">${escapeHtml(item.text)}</span>
     </li>`;
   }).join('');
@@ -304,6 +306,7 @@ function openShopModal() {
     $('#shop-empty-hint').hidden = true;
     list.innerHTML = state.rewards.map((r) => `
       <li class="shop-item">
+        <span class="shop-item-emoji">${r.emoji || '🎁'}</span>
         <span class="shop-item-name">${escapeHtml(r.name)}</span>
         <span class="shop-item-cost">⭐️ ${r.cost}</span>
         <button class="btn btn-primary btn-small" data-id="${r.id}" ${child.stickers < r.cost ? 'disabled' : ''}>교환</button>
@@ -434,24 +437,88 @@ function renderAdminView() {
   renderAdminRewardList();
 }
 
+const CHILD_EMOJIS = [
+  '🐰','🐻','🐥','🐱','🐶','🐹','🐼','🦊','🐸','🐨',
+  '🦁','🐯','🐮','🐷','🐙','🐧','🦄','🐳','🦋','🐝',
+  '👦','👧','🧒','👶','⭐️','🌟','🌈','🍀','🍭','🎈',
+];
+const ROUTINE_EMOJIS = [
+  '🌅','🌙','🎒','📚','🍚','🥛','🛁','🦷','💪','🏃',
+  '👕','🧤','👟','🎨','🎮','🎵','📖','✏️','🧹','🛏️',
+  '🚿','🧴','😴','🥗','🥤','🍎','🧸','🌿','❤️','✅',
+];
+const REWARD_EMOJIS = [
+  '🍦','🍕','🎮','🎪','🎁','🎠','🎡','🎢','🎬','🍿',
+  '🧁','🍰','🍩','🍫','🎯','⚽','🏊','🎸','🎨','🎭',
+  '🦄','🌈','🍭','🎀','🏆','🌟','💎','🎊','🎉','🛹',
+];
+
+let emojiPickerTarget = null; // { type: 'child'|'routine'|'reward', id, callback }
+
+function openEmojiPicker(anchorEl, emojiSet, currentEmoji, onSelect) {
+  closeEmojiPicker();
+  const picker = document.createElement('div');
+  picker.id = 'emoji-picker';
+  picker.className = 'emoji-picker';
+  picker.innerHTML = emojiSet.map((e) =>
+    `<button class="emoji-option${e === currentEmoji ? ' selected' : ''}" data-emoji="${e}">${e}</button>`
+  ).join('');
+  document.body.appendChild(picker);
+
+  // Position near anchor
+  const rect = anchorEl.getBoundingClientRect();
+  const pickerW = 260;
+  let left = rect.left + window.scrollX;
+  let top = rect.bottom + window.scrollY + 6;
+  if (left + pickerW > window.innerWidth - 10) left = window.innerWidth - pickerW - 10;
+  picker.style.left = left + 'px';
+  picker.style.top = top + 'px';
+
+  picker.querySelectorAll('.emoji-option').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onSelect(btn.dataset.emoji);
+      closeEmojiPicker();
+    });
+  });
+
+  setTimeout(() => {
+    document.addEventListener('click', onOutsideClick);
+  }, 0);
+}
+
+function onOutsideClick(e) {
+  const picker = document.getElementById('emoji-picker');
+  if (picker && !picker.contains(e.target)) {
+    closeEmojiPicker();
+  }
+}
+
+function closeEmojiPicker() {
+  const existing = document.getElementById('emoji-picker');
+  if (existing) existing.remove();
+  document.removeEventListener('click', onOutsideClick);
+}
+
 function renderAdminChildrenList() {
-  const emojis = ['👦', '👧', '🧒', '👶', '🐱', '🐶', '🐰', '🦁', '🐼', '⭐️'];
   const box = $('#admin-children-list');
   box.innerHTML = state.children.map((c) => `
     <div class="admin-row" data-id="${c.id}">
-      <button class="admin-row-emoji emoji-cycle" data-id="${c.id}" title="아이콘 바꾸기">${c.emoji}</button>
+      <button class="admin-row-emoji emoji-pick-btn" data-id="${c.id}" title="아이콘 바꾸기">${c.emoji}<span class="emoji-pick-hint">▾</span></button>
       <input type="text" class="text-input child-name-input" data-id="${c.id}" value="${escapeHtml(c.name)}">
       <button class="btn btn-danger btn-small child-delete" data-id="${c.id}">삭제</button>
     </div>`).join('');
 
-  box.querySelectorAll('.emoji-cycle').forEach((btn) => {
-    btn.addEventListener('click', () => {
+  box.querySelectorAll('.emoji-pick-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
       const c = getChild(btn.dataset.id);
-      const idx = emojis.indexOf(c.emoji);
-      c.emoji = emojis[(idx + 1 + emojis.length) % emojis.length];
-      saveState();
-      renderAdminChildrenList();
-      renderChildrenRow();
+      openEmojiPicker(btn, CHILD_EMOJIS, c.emoji, (newEmoji) => {
+        c.emoji = newEmoji;
+        saveState();
+        renderAdminChildrenList();
+        renderChildrenRow();
+      });
     });
   });
   box.querySelectorAll('.child-name-input').forEach((inp) => {
@@ -516,14 +583,29 @@ function renderAdminRoutineList() {
     return;
   }
   ul.innerHTML = items.map((item, idx) => `
-    <li class="admin-row" data-id="${item.id}">
-      <span class="order-btns">
-        <button class="order-up" data-id="${item.id}" ${idx === 0 ? 'disabled' : ''}>▲</button>
-        <button class="order-down" data-id="${item.id}" ${idx === items.length - 1 ? 'disabled' : ''}>▼</button>
-      </span>
+    <li class="admin-row draggable-routine" data-id="${item.id}" draggable="true">
+      <span class="drag-handle" title="드래그해서 순서 변경">⠿</span>
+      <button class="routine-emoji-btn emoji-pick-btn" data-id="${item.id}" title="이모지 선택">${item.emoji || '📌'}<span class="emoji-pick-hint">▾</span></button>
       <input type="text" class="text-input routine-text-input" data-id="${item.id}" value="${escapeHtml(item.text)}">
       <button class="btn btn-danger btn-small routine-delete" data-id="${item.id}">삭제</button>
     </li>`).join('');
+
+  // Emoji picker for routine items
+  ul.querySelectorAll('.routine-emoji-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const item = items.find((it) => it.id === btn.dataset.id);
+      if (!item) return;
+      openEmojiPicker(btn, ROUTINE_EMOJIS, item.emoji || '📌', (newEmoji) => {
+        item.emoji = newEmoji;
+        saveState();
+        renderAdminRoutineList();
+      });
+    });
+  });
+
+  // Drag-and-drop for routine order
+  setupDragSort(ul, items, () => { saveState(); renderAdminRoutineList(); });
 
   ul.querySelectorAll('.order-up').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -558,11 +640,30 @@ function renderAdminRewardList() {
     return;
   }
   ul.innerHTML = state.rewards.map((r) => `
-    <li class="admin-row" data-id="${r.id}">
+    <li class="admin-row draggable-reward" data-id="${r.id}" draggable="true">
+      <span class="drag-handle" title="드래그해서 순서 변경">⠿</span>
+      <button class="reward-emoji-btn emoji-pick-btn" data-id="${r.id}" title="이모지 선택">${r.emoji || '🎁'}<span class="emoji-pick-hint">▾</span></button>
       <input type="text" class="text-input reward-name-input" data-id="${r.id}" value="${escapeHtml(r.name)}">
       <input type="number" class="num-input reward-cost-input" data-id="${r.id}" value="${r.cost}" min="1">
       <button class="btn btn-danger btn-small reward-delete" data-id="${r.id}">삭제</button>
     </li>`).join('');
+
+  // Emoji picker for reward items
+  ul.querySelectorAll('.reward-emoji-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const r = state.rewards.find((rw) => rw.id === btn.dataset.id);
+      if (!r) return;
+      openEmojiPicker(btn, REWARD_EMOJIS, r.emoji || '🎁', (newEmoji) => {
+        r.emoji = newEmoji;
+        saveState();
+        renderAdminRewardList();
+      });
+    });
+  });
+
+  // Drag-and-drop for reward order
+  setupDragSort(ul, state.rewards, () => { saveState(); renderAdminRewardList(); });
 
   ul.querySelectorAll('.reward-name-input').forEach((inp) => {
     inp.addEventListener('change', () => {
@@ -585,7 +686,55 @@ function renderAdminRewardList() {
   });
 }
 
-/* ---------------- event wiring (static elements) ---------------- */
+/* ---------------- drag-and-drop sort ---------------- */
+function setupDragSort(ul, dataArray, onDone) {
+  let dragSrcId = null;
+  ul.querySelectorAll('[draggable="true"]').forEach((li) => {
+    li.addEventListener('dragstart', (e) => {
+      dragSrcId = li.dataset.id;
+      li.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    li.addEventListener('dragend', () => {
+      li.classList.remove('dragging');
+      ul.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
+    });
+    li.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (li.dataset.id !== dragSrcId) {
+        ul.querySelectorAll('.drag-over').forEach((el) => el.classList.remove('drag-over'));
+        li.classList.add('drag-over');
+      }
+    });
+    li.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (li.dataset.id === dragSrcId) return;
+      const fromIdx = dataArray.findIndex((it) => it.id === dragSrcId);
+      const toIdx = dataArray.findIndex((it) => it.id === li.dataset.id);
+      if (fromIdx > -1 && toIdx > -1) {
+        const [moved] = dataArray.splice(fromIdx, 1);
+        dataArray.splice(toIdx, 0, moved);
+        onDone();
+      }
+    });
+  });
+}
+
+/* ---------------- new routine/reward emoji state ---------------- */
+let newRoutineEmoji = '📌';
+let newRewardEmoji = '🎁';
+
+function renderNewRoutineEmojiBtn() {
+  const btn = $('#new-routine-emoji');
+  if (btn) btn.textContent = newRoutineEmoji + '▾';
+}
+function renderNewRewardEmojiBtn() {
+  const btn = $('#new-reward-emoji');
+  if (btn) btn.textContent = newRewardEmoji + '▾';
+}
+
+
 function wireEvents() {
   // date nav
   $('#date-prev').addEventListener('click', () => { uiDate = addDays(uiDate, -1); renderRoutineView(); });
@@ -666,10 +815,24 @@ function wireEvents() {
   // admin: routines
   $('#add-routine-item').addEventListener('click', addRoutineItem);
   $('#new-routine-text').addEventListener('keydown', (e) => { if (e.key === 'Enter') addRoutineItem(); });
+  $('#new-routine-emoji').addEventListener('click', (e) => {
+    e.stopPropagation();
+    openEmojiPicker($('#new-routine-emoji'), ROUTINE_EMOJIS, newRoutineEmoji, (em) => {
+      newRoutineEmoji = em;
+      renderNewRoutineEmojiBtn();
+    });
+  });
 
   // admin: rewards
   $('#add-reward-item').addEventListener('click', addRewardItem);
   $('#new-reward-name').addEventListener('keydown', (e) => { if (e.key === 'Enter') addRewardItem(); });
+  $('#new-reward-emoji').addEventListener('click', (e) => {
+    e.stopPropagation();
+    openEmojiPicker($('#new-reward-emoji'), REWARD_EMOJIS, newRewardEmoji, (em) => {
+      newRewardEmoji = em;
+      renderNewRewardEmojiBtn();
+    });
+  });
 
   // confirm modal
   $('#confirm-modal-ok').addEventListener('click', () => {
@@ -723,7 +886,7 @@ function addRoutineItem() {
   if (!text) return;
   const childId = $('#routine-edit-child').value;
   const list = getRoutineItems(childId, currentAdminPeriod);
-  list.push({ id: uid(), text });
+  list.push({ id: uid(), text, emoji: newRoutineEmoji });
   saveState();
   $('#new-routine-text').value = '';
   renderAdminRoutineList();
@@ -733,7 +896,7 @@ function addRewardItem() {
   const name = $('#new-reward-name').value.trim();
   const cost = Math.max(1, parseInt($('#new-reward-cost').value, 10) || 1);
   if (!name) return;
-  state.rewards.push({ id: uid(), name, cost });
+  state.rewards.push({ id: uid(), name, cost, emoji: newRewardEmoji });
   saveState();
   $('#new-reward-name').value = '';
   $('#new-reward-cost').value = 5;
@@ -810,3 +973,4 @@ function init() {
 }
 
 init();
+
